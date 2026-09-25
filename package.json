@@ -1,0 +1,47 @@
+{
+  "name": "devasetu-server",
+  "version": "1.0.0",
+  "description": "DevaSetu Temple Services & Darshan Management Platform - Backend API",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "verify:models": "node src/utils/verifyModels.js",
+    "test:auth": "node src/utils/testAuth.js",
+    "test:phase4": "node src/utils/testPhase4.js",
+    "test:phase5": "node src/utils/testPhase5.js",
+    "test:credentials": "node src/utils/testAuthorityCredentials.js",
+    "test:phase6": "node src/utils/testPhase6.js",
+    "test:phase7": "node src/utils/testPhase7.js",
+    "seed:analytics": "node src/scripts/seedAnalyticsData.js",
+    "clear:analytics": "node src/scripts/clearAnalyticsData.js",
+    "test:email": "node src/utils/testEmailSystem.js"
+  },
+  "keywords": [
+    "devasetu",
+    "temple-management",
+    "express",
+    "mongoose"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.11.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.10",
+    "razorpay": "^2.9.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

@@ -1,0 +1,78 @@
+import mongoose from 'mongoose';
+
+export const NOTIFICATION_TYPES = Object.freeze({
+  BOOKING_CONFIRMED: 'BOOKING_CONFIRMED',
+  PAYMENT_SUCCESS: 'PAYMENT_SUCCESS',
+  BOOKING_CANCELLED: 'BOOKING_CANCELLED',
+  TEMPLE_UPDATE: 'TEMPLE_UPDATE',
+  SERVICE_UPDATE: 'SERVICE_UPDATE',
+  SYSTEM: 'SYSTEM',
+});
+
+const notificationSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Recipient User ID is required'],
+      index: true,
+    },
+    title: {
+      type: String,
+      required: [true, 'Notification title is required'],
+      trim: true,
+      maxlength: [150, 'Title cannot exceed 150 characters'],
+    },
+    message: {
+      type: String,
+      required: [true, 'Notification message is required'],
+      trim: true,
+      maxlength: [500, 'Message cannot exceed 500 characters'],
+    },
+    type: {
+      type: String,
+      required: [true, 'Notification type is required'],
+      enum: {
+        values: Object.values(NOTIFICATION_TYPES),
+        message: '{VALUE} is not a valid notification type',
+      },
+      index: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    metadata: {
+      bookingId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Booking',
+        default: null,
+      },
+      templeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Temple',
+        default: null,
+      },
+      serviceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Service',
+        default: null,
+      },
+      actionUrl: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+    },
+  },
+  {
+    timestamps: { createdAt: true, updatedAt: false }, // Notifications only track creation time
+  }
+);
+
+// Indexes
+notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+
+export const Notification = mongoose.model('Notification', notificationSchema);
+export default Notification;
