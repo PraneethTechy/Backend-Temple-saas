@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+
+    /* Incremental Migration Strategy */
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "esModuleInterop": true,
+
+    /* Path Aliases (TS 5.8+ relative without baseUrl) */
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    }
+  },
+  "include": ["src", "shared"],
+  "exclude": [
+    "node_modules",
+    "src/utils/test*.ts",
+    "src/utils/verifyModels.ts",
+    "src/utils/auditTemples.ts",
+    "src/utils/cleanTestArtifacts.ts",
+    "src/scripts/*.ts"
+  ]
+}
