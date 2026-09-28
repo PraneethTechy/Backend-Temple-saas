@@ -27,20 +27,46 @@ const app: Application = express();
 app.use(helmet());
 
 // CORS configuration - strict origin matching
-const allowedOrigin: string = String(ENV.CLIENT_URL || 'http://localhost:5173');
+// CORS configuration - allow local development and deployed frontend
+const allowedOrigins: string[] = [
+  'http://localhost:5173',
+  'https://temple-blond.vercel.app',
+  ENV.CLIENT_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void
+    ) => {
       // Allow requests with no origin (like mobile apps, curl, or Postman)
       if (!origin) return callback(null, true);
-      if (origin === allowedOrigin || origin === allowedOrigin.replace(/\/$/, '')) {
+
+      const normalizedOrigin = origin.replace(/\/$/, '');
+
+      if (
+        allowedOrigins.some(
+          (allowed) =>
+            normalizedOrigin === allowed.replace(/\/$/, '')
+        )
+      ) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS policy violation: Origin ${origin} not allowed`));
+
+      return callback(
+        new Error(`CORS policy violation: Origin ${origin} not allowed`)
+      );
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-bootstrap-secret', 'x_admin_bootstrap_secret', 'admin-bootstrap-secret'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-admin-bootstrap-secret',
+      'x_admin_bootstrap_secret',
+      'admin-bootstrap-secret',
+    ],
   })
 );
 
@@ -102,7 +128,7 @@ export const startServer = async () => {
     try {
       await mongoose.disconnect();
       console.log('[Database]: Disconnected from MongoDB.');
-    } catch (e) {}
+    } catch (e) { }
     server.close(() => {
       console.log('[Server]: HTTP server closed.');
       process.exit(0);
