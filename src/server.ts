@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
@@ -13,6 +14,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
+
 import { ENV } from './config/env.js';
 import { connectDatabase } from './config/database.js';
 import apiRouter from './routes/index.js';
@@ -23,11 +25,16 @@ import { verifySmtpConnection } from './services/emailService.js';
 
 const app: Application = express();
 
+// ==================================================
 // Security HTTP headers
+// ==================================================
+
 app.use(helmet());
 
-// CORS configuration - strict origin matching
-// CORS configuration - allow local development and deployed frontend
+// ==================================================
+// CORS configuration
+// ==================================================
+
 const allowedOrigins: string[] = [
   'http://localhost:5173',
   'https://temple-blond.vercel.app',
@@ -40,26 +47,40 @@ app.use(
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void
     ) => {
-      // Allow requests with no origin (like mobile apps, curl, or Postman)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
 
       const normalizedOrigin = origin.replace(/\/$/, '');
 
-      if (
-        allowedOrigins.some(
-          (allowed) =>
-            normalizedOrigin === allowed.replace(/\/$/, '')
-        )
-      ) {
+      const isAllowed = allowedOrigins.some(
+        (allowed) =>
+          normalizedOrigin === allowed.replace(/\/$/, '')
+      );
+
+      if (isAllowed) {
         return callback(null, true);
       }
 
       return callback(
-        new Error(`CORS policy violation: Origin ${origin} not allowed`)
+        new Error(
+          `CORS policy violation: Origin ${origin} not allowed`
+        )
       );
     },
+
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+
+    methods: [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'OPTIONS',
+    ],
+
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -70,77 +91,179 @@ app.use(
   })
 );
 
+// ==================================================
 // Cookie parsing
+// ==================================================
+
 app.use(cookieParser());
 
+// ==================================================
 // HTTP request logger
+// ==================================================
+
 if (ENV.NODE_ENV !== 'test') {
-  app.use(morgan(ENV.NODE_ENV === 'production' ? 'combined' : 'dev'));
+  app.use(
+    morgan(
+      ENV.NODE_ENV === 'production'
+        ? 'combined'
+        : 'dev'
+    )
+  );
 }
 
+// ==================================================
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// ==================================================
 
-// Lightweight reach tracking for public visitors
+app.use(
+  express.json({
+    limit: '10mb',
+  })
+);
+
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+  })
+);
+
+// ==================================================
+// Lightweight reach tracking
+// ==================================================
+
 app.use(trackSiteReach);
 
+// ==================================================
 // Mount central API router
+// ==================================================
+
 app.use('/api', apiRouter);
 
-// 404 handler for unrecognized routes
+// ==================================================
+// 404 handler
+// ==================================================
+
 app.use(notFoundHandler);
 
+// ==================================================
 // Centralized error handling
+// ==================================================
+
 app.use(errorHandler);
 
+// ==================================================
 // Start server
+// ==================================================
+
 export const startServer = async () => {
-  // Connect to MongoDB Atlas (or report configuration requirement)
+  // Connect to MongoDB Atlas
   await connectDatabase();
 
   // Verify SMTP connection on startup without crashing
   await verifySmtpConnection();
 
   const server = app.listen(ENV.PORT, () => {
-    console.log(`\n==================================================`);
-    console.log(`🛕  DevaSetu Server running on port ${ENV.PORT}`);
-    console.log(`🌐  Environment: ${ENV.NODE_ENV}`);
-    console.log(`🔒  CORS allowed origin: ${allowedOrigin}`);
-    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-      console.log(`💳  Razorpay test payment configuration loaded`);
+    console.log(
+      `\n==================================================`
+    );
+
+    console.log(
+      `🛕  DevaSetu Server running on port ${ENV.PORT}`
+    );
+
+    console.log(
+      `🌐  Environment: ${ENV.NODE_ENV}`
+    );
+
+    console.log(
+      `🔒  CORS allowed origins: ${allowedOrigins.join(', ')}`
+    );
+
+    if (
+      process.env.RAZORPAY_KEY_ID &&
+      process.env.RAZORPAY_KEY_SECRET
+    ) {
+      console.log(
+        `💳  Razorpay test payment configuration loaded`
+      );
     }
-    console.log(`==================================================\n`);
+
+    console.log(
+      `==================================================\n`
+    );
   });
+
+  // ==================================================
+  // Server error handling
+  // ==================================================
 
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`❌ [Server]: Port ${ENV.PORT} is already in use by another process. Please stop any other running dev servers.`);
+      console.error(
+        `❌ [Server]: Port ${ENV.PORT} is already in use by another process.`
+      );
+
+      console.error(
+        `Please stop any other running dev servers.`
+      );
     } else {
-      console.error(`❌ [Server]: Server listen error: ${err.message}`);
+      console.error(
+        `❌ [Server]: Server listen error: ${err.message}`
+      );
     }
+
     process.exit(1);
   });
 
-  // Graceful shutdown handling
+  // ==================================================
+  // Graceful shutdown
+  // ==================================================
+
   const handleShutdown = async (signal: string) => {
-    console.log(`\n[Server]: Received ${signal}. Closing connections...`);
+    console.log(
+      `\n[Server]: Received ${signal}. Closing connections...`
+    );
+
     try {
       await mongoose.disconnect();
-      console.log('[Database]: Disconnected from MongoDB.');
-    } catch (e) { }
+
+      console.log(
+        '[Database]: Disconnected from MongoDB.'
+      );
+    } catch (e) {
+      console.error(
+        '[Database]: Error while disconnecting from MongoDB.'
+      );
+    }
+
     server.close(() => {
-      console.log('[Server]: HTTP server closed.');
+      console.log(
+        '[Server]: HTTP server closed.'
+      );
+
       process.exit(0);
     });
   };
 
-  process.on('SIGINT', () => handleShutdown('SIGINT'));
-  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-  process.once('SIGUSR2', () => handleShutdown('SIGUSR2'));
+  process.on('SIGINT', () => {
+    handleShutdown('SIGINT');
+  });
+
+  process.on('SIGTERM', () => {
+    handleShutdown('SIGTERM');
+  });
+
+  process.once('SIGUSR2', () => {
+    handleShutdown('SIGUSR2');
+  });
 
   return server;
 };
+
+// ==================================================
+// Start application
+// ==================================================
 
 startServer();
 
