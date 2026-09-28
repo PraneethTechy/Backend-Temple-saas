@@ -17,6 +17,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+
           script: |
             set -e
 
@@ -26,7 +27,7 @@ jobs:
             git pull origin main
 
             echo "Installing dependencies..."
-            npm ci --omit=dev
+            npm ci
 
             echo "Restarting DevaSetu backend..."
             sudo systemctl restart devasetu
