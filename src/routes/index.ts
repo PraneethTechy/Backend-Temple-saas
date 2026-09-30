@@ -12,6 +12,7 @@ import notificationRoutes from './notificationRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
 import visitPlanRoutes from './visitPlanRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
+import messageRoutes from './messageRoutes.js';
 
 const router: Router = Router();
 
@@ -53,5 +54,8 @@ router.use('/admin', adminRoutes);
 
 // Temple Authority Interface mounted at /api/authority
 router.use('/authority', authorityRoutes);
+
+// Admin <-> Temple Authority Messaging mounted at /api/messages
+router.use('/messages', messageRoutes);
 
 export default router;

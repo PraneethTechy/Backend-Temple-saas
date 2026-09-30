@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   register,
   login,
+  googleLogin,
   getMe,
   logout,
   createAdmin,
@@ -14,6 +15,7 @@ const router: Router = Router();
 // Public Authentication Routes
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google', googleLogin);
 router.post('/logout', logout);
 
 // Protected Admin Bootstrap (Secret Header Required)

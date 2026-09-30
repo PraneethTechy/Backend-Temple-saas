@@ -23,3 +23,5 @@ export * from './TempleAnnouncement.js';
 export * from './VisitPlan.js';
 export * from './SavedTemple.js';
 export * from './SiteReachMetric.js';
+export * from './Conversation.js';
+export * from './Message.js';

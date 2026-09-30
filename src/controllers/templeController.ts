@@ -38,7 +38,7 @@ export const getPublicTemples = async (
 ): Promise<Response | void> => {
   try {
     const page = Math.max(1, parseInt(req.query.page || '1', 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit || '12', 10) || 12));
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit || '100', 10) || 100));
     const skip = (page - 1) * limit;
 
     const { search, city, state, templeType, sort, category, serviceType } = req.query;

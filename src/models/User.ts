@@ -16,6 +16,8 @@ export interface IUser {
   isEmailVerified: boolean;
   mustChangePassword: boolean;
   lastLoginAt?: Date | null;
+  googleId?: string | null;
+  avatar?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -58,9 +60,22 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function (this: any) {
+        return !this.googleId;
+      },
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Never return password in queries by default
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    avatar: {
+      type: String,
+      trim: true,
+      default: null,
     },
     role: {
       type: String,

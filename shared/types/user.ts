@@ -15,6 +15,8 @@ export interface User extends Timestamps {
   isEmailVerified?: boolean;
   mustChangePassword?: boolean;
   lastLoginAt?: string | null;
+  googleId?: string | null;
+  avatar?: string | null;
 }
 
 export type AuthenticatedUser = Omit<User, 'password'>;

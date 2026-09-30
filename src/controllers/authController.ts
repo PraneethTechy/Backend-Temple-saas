@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 import { User, USER_ROLES } from '../models/index.js';
 import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
@@ -16,6 +17,10 @@ interface RegisterBody {
 interface LoginBody {
   email?: string;
   password?: string;
+}
+
+interface GoogleLoginBody {
+  credential?: string;
 }
 
 interface CreateAdminBody {
@@ -142,6 +147,142 @@ export const login = async (
           token,
         },
         'Login successful'
+      )
+    );
+  } catch (error: unknown) {
+    next(error);
+  }
+};
+
+/**
+ * Public Devotee Google Sign-In
+ * POST /api/auth/google
+ * Body: { credential: string }
+ *
+ * Verifies Google ID token server-side using Google Identity Services.
+ * DEVOTEE ONLY:
+ * - Creates role = DEVOTEE if new user.
+ * - Links googleId if existing devotee.
+ * - Rejects with 403 if existing user is ADMIN or TEMPLE_AUTHORITY.
+ * - Never grants ADMIN or TEMPLE_AUTHORITY role via Google Sign-In.
+ */
+export const googleLogin = async (
+  req: Request<Record<string, never>, unknown, GoogleLoginBody>,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential || typeof credential !== 'string') {
+      return next(ApiError.badRequest('Google authentication credential is required'));
+    }
+
+    if (!ENV.GOOGLE_CLIENT_ID) {
+      console.error('[AUTH GOOGLE]: GOOGLE_CLIENT_ID is not configured in server environment');
+      return next(ApiError.internal('Google authentication is not properly configured on server'));
+    }
+
+    // Verify Google ID token server-side
+    const client = new OAuth2Client(ENV.GOOGLE_CLIENT_ID);
+    let ticket;
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: ENV.GOOGLE_CLIENT_ID,
+      });
+    } catch (verifyError: any) {
+      console.warn('[AUTH GOOGLE]: Token verification failed:', verifyError?.message);
+      return next(ApiError.unauthorized('Google authentication failed: Invalid or expired token'));
+    }
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return next(ApiError.unauthorized('Google authentication failed: Email claim missing from token'));
+    }
+
+    const googleId = payload.sub;
+    const email = payload.email.toLowerCase().trim();
+    const name = payload.name?.trim() || email.split('@')[0] || 'Devotee';
+    const avatar = payload.picture || null;
+    const isEmailVerified = payload.email_verified ?? true;
+
+    // Check Case 1: Existing Google-linked user
+    let user = await User.findOne({ googleId });
+
+    if (user) {
+      // Role security: Devotee-only endpoint
+      if (user.role !== USER_ROLES.DEVOTEE) {
+        return next(
+          ApiError.forbidden(
+            'This account has administrative privileges. Please sign in via the designated administrative console.'
+          )
+        );
+      }
+
+      if (!user.isActive) {
+        return next(ApiError.unauthorized('Your account has been deactivated. Please contact support.'));
+      }
+
+      user.lastLoginAt = new Date();
+      if (!user.avatar && avatar) user.avatar = avatar;
+      if (!user.isEmailVerified && isEmailVerified) user.isEmailVerified = true;
+      await user.save();
+    } else {
+      // Check Case 3 & 4: User with this email already exists
+      const existingUserByEmail = await User.findOne({ email });
+
+      if (existingUserByEmail) {
+        // Case 4: Existing ADMIN or TEMPLE_AUTHORITY -> conflict / forbidden
+        if (existingUserByEmail.role !== USER_ROLES.DEVOTEE) {
+          return next(
+            ApiError.forbidden(
+              'An administrative account already exists with this email address. Please sign in via the designated portal.'
+            )
+          );
+        }
+
+        if (!existingUserByEmail.isActive) {
+          return next(ApiError.unauthorized('Your account has been deactivated. Please contact support.'));
+        }
+
+        // Case 3: Existing DEVOTEE -> safely link Google identity
+        existingUserByEmail.googleId = googleId;
+        existingUserByEmail.lastLoginAt = new Date();
+        if (!existingUserByEmail.avatar && avatar) existingUserByEmail.avatar = avatar;
+        if (isEmailVerified) existingUserByEmail.isEmailVerified = true;
+        await existingUserByEmail.save();
+
+        user = existingUserByEmail;
+      } else {
+        // Case 2: New user -> strictly role = DEVOTEE
+        user = new User({
+          name,
+          email,
+          role: USER_ROLES.DEVOTEE,
+          googleId,
+          avatar,
+          isActive: true,
+          isEmailVerified,
+          mustChangePassword: false,
+          lastLoginAt: new Date(),
+        });
+
+        await user.save();
+      }
+    }
+
+    // Generate JWT and set HTTP-only cookie using existing mechanisms
+    const token = generateToken(user);
+    setAuthCookie(res, token);
+
+    return res.status(200).json(
+      ApiResponse.success(
+        {
+          user: user.toJSON(),
+          token,
+        },
+        'Google sign-in successful'
       )
     );
   } catch (error: unknown) {

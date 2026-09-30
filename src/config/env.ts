@@ -17,6 +17,7 @@ export interface EnvironmentConfig {
   JWT_EXPIRES_IN: string;
   ADMIN_BOOTSTRAP_SECRET: string;
   CLIENT_URL: string;
+  GOOGLE_CLIENT_ID: string;
   CLOUDINARY: {
     CLOUD_NAME: string;
     API_KEY: string;
@@ -42,6 +43,7 @@ export const ENV: EnvironmentConfig = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   ADMIN_BOOTSTRAP_SECRET: process.env.ADMIN_BOOTSTRAP_SECRET || 'DevaSetu_Bootstrap_Secret_Key_2026_Secured',
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   CLOUDINARY: {
     CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
     API_KEY: process.env.CLOUDINARY_API_KEY || '',

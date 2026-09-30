@@ -20,3 +20,4 @@ export * from './announcement.js';
 export * from './audit.js';
 export * from './api.js';
 export * from './env.js';
+export * from './message.js';

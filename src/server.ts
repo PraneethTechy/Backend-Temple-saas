@@ -22,6 +22,7 @@ import { notFoundHandler } from './middleware/notFoundMiddleware.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { trackSiteReach } from './middleware/reachTracker.js';
 import { verifySmtpConnection } from './services/emailService.js';
+import { initSocket, getIO } from './services/socketService.js';
 
 const app: Application = express();
 
@@ -35,9 +36,21 @@ app.use(helmet());
 // CORS configuration
 // ==================================================
 
+// ==================================================
+// CORS configuration
+// ==================================================
+
 const allowedOrigins: string[] = [
+  // Local development
   'http://localhost:5173',
+
+  // Previous Vercel deployment
   'https://temple-blond.vercel.app',
+
+  // AWS Amplify production frontend
+  'https://main.d2d8a4sp0475kj.amplifyapp.com',
+
+  // Optional environment-based frontend URL
   ENV.CLIENT_URL,
 ].filter(Boolean);
 
@@ -47,7 +60,8 @@ app.use(
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void
     ) => {
-      // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+      // Allow requests without an Origin header
+      // (Postman, curl, server-to-server requests, etc.)
       if (!origin) {
         return callback(null, true);
       }
@@ -62,6 +76,10 @@ app.use(
       if (isAllowed) {
         return callback(null, true);
       }
+
+      console.error(
+        `❌ CORS blocked origin: ${origin}`
+      );
 
       return callback(
         new Error(
@@ -90,7 +108,6 @@ app.use(
     ],
   })
 );
-
 // ==================================================
 // Cookie parsing
 // ==================================================
@@ -194,6 +211,9 @@ export const startServer = async () => {
     );
   });
 
+  // Initialize Socket.IO for messaging and real-time typing indicators
+  initSocket(server);
+
   // ==================================================
   // Server error handling
   // ==================================================
@@ -226,6 +246,7 @@ export const startServer = async () => {
     );
 
     try {
+      getIO()?.close();
       await mongoose.disconnect();
 
       console.log(
@@ -265,6 +286,8 @@ export const startServer = async () => {
 // Start application
 // ==================================================
 
-startServer();
+if (process.env.NODE_ENV !== 'test' && ENV.NODE_ENV !== 'test') {
+  startServer();
+}
 
 export default app;
