@@ -51,13 +51,12 @@ export const setAuthCookie = (res: Response, token: string): void => {
 
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: isProduction, // HTTPS only in production
-    sameSite: isProduction ? 'strict' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',
   });
 };
-
 /**
  * Clear the authentication cookie from Express response
  * @param res - Express response object
@@ -68,7 +67,7 @@ export const clearAuthCookie = (res: Response): void => {
   res.clearCookie(COOKIE_NAME, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'none' : 'lax', 
     maxAge: 0,
     path: '/',
   });
