@@ -40,65 +40,13 @@ app.use(helmet());
 // CORS configuration
 // ==================================================
 
-const allowedOrigins: string[] = [
-  // Local development
-  'http://localhost:5173',
 
-  // Previous Vercel deployment
-  'https://temple-blond.vercel.app',
-
-  // AWS Amplify production frontend
-  'https://main.d2d8a4sp0475kj.amplifyapp.com',
-
-  // Optional environment-based frontend URL
-  ENV.CLIENT_URL,
-].filter(Boolean);
 
 app.use(
   cors({
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void
-    ) => {
-      // Allow requests without an Origin header
-      // (Postman, curl, server-to-server requests, etc.)
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      const normalizedOrigin = origin.replace(/\/$/, '');
-
-      const isAllowed = allowedOrigins.some(
-        (allowed) =>
-          normalizedOrigin === allowed.replace(/\/$/, '')
-      );
-
-      if (isAllowed) {
-        return callback(null, true);
-      }
-
-      console.error(
-        `❌ CORS blocked origin: ${origin}`
-      );
-
-      return callback(
-        new Error(
-          `CORS policy violation: Origin ${origin} not allowed`
-        )
-      );
-    },
-
+    origin: true,
     credentials: true,
-
-    methods: [
-      'GET',
-      'POST',
-      'PUT',
-      'PATCH',
-      'DELETE',
-      'OPTIONS',
-    ],
-
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
@@ -108,6 +56,11 @@ app.use(
     ],
   })
 );
+
+
+
+
+
 // ==================================================
 // Cookie parsing
 // ==================================================
