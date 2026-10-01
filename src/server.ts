@@ -146,10 +146,8 @@ export const startServer = async () => {
       `🌐  Environment: ${ENV.NODE_ENV}`
     );
 
-    console.log(
-      `🔒  CORS allowed origins: ${allowedOrigins.join(', ')}`
-    );
-
+    console.log('🔒  CORS: allowing all origins');
+    
     if (
       process.env.RAZORPAY_KEY_ID &&
       process.env.RAZORPAY_KEY_SECRET
