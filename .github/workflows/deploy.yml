@@ -17,6 +17,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
 
           script: |
             set -e
@@ -24,7 +25,8 @@ jobs:
             cd /home/ec2-user/Backend-Temple-saas
 
             echo "Pulling latest code..."
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
 
             echo "Installing dependencies..."
             npm ci --include=dev
