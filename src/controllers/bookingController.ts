@@ -223,11 +223,9 @@ export const createBooking = async (
     // 11. Generate unique human-readable booking reference
     const bookingReference = await generateBookingReference(normalizedBookingDate);
 
-    // Free Offering auto-confirmation logic
-    const isFreeBooking = totalAmount === 0;
-    const initialPaymentStatus = isFreeBooking ? PAYMENT_STATUS.PAID : PAYMENT_STATUS.PENDING;
-    const initialBookingStatus = isFreeBooking ? BOOKING_STATUS.CONFIRMED : BOOKING_STATUS.PENDING;
-    const initialToken = isFreeBooking ? crypto.randomBytes(24).toString('hex') : null;
+    // All bookings proceed through payment verification
+    const initialPaymentStatus = PAYMENT_STATUS.PENDING;
+    const initialBookingStatus = BOOKING_STATUS.PENDING;
 
     // 12. Create Booking Document
     const booking = new Booking({
@@ -242,10 +240,10 @@ export const createBooking = async (
       totalAmount,
       paymentStatus: initialPaymentStatus,
       bookingStatus: initialBookingStatus,
-      qrVerificationToken: initialToken,
+      qrVerificationToken: null,
       qrCode: {
-        code: initialToken,
-        generatedAt: isFreeBooking ? new Date() : null,
+        code: null,
+        generatedAt: null,
       },
       checkedInAt: null,
       checkedInBy: null,

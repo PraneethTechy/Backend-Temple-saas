@@ -146,15 +146,8 @@ export const startServer = async () => {
       `🌐  Environment: ${ENV.NODE_ENV}`
     );
 
-<<<<<<< Updated upstream
     console.log('🔒  CORS: allowing all origins');
     
-=======
-    console.log(
-    "cors running"
-    );
-
->>>>>>> Stashed changes
     if (
       process.env.RAZORPAY_KEY_ID &&
       process.env.RAZORPAY_KEY_SECRET

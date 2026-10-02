@@ -62,7 +62,11 @@ export const createPaymentOrder = async (
     }
 
     // 5. Check if already PAID (Idempotency)
-    if (booking.paymentStatus === PAYMENT_STATUS.PAID) {
+    const existingPaid = await Payment.findOne({
+      bookingId: booking._id,
+      status: PAYMENT_STATUS.PAID,
+    });
+    if (booking.paymentStatus === PAYMENT_STATUS.PAID && existingPaid) {
       return ApiResponse.success(
         res,
         {
@@ -82,11 +86,9 @@ export const createPaymentOrder = async (
     }
 
     const unitPrice = service.price || 0;
-    const calculatedAmount = unitPrice * booking.quantity;
-
-    if (calculatedAmount < 0) {
-      throw ApiError.badRequest('Calculated amount cannot be negative.');
-    }
+    const rawAmount = unitPrice * booking.quantity;
+    // Minimum 1 INR for Razorpay payment gateway order creation in test/demo mode (100 paise)
+    const calculatedAmount = rawAmount > 0 ? rawAmount : 1;
 
     // 7. Check if an active PENDING payment with orderId already exists
     let existingPayment = await Payment.findOne({
